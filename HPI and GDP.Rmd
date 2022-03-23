@@ -1,0 +1,116 @@
+---
+title: "Cor-relation among House Price Index and GDP using time series"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+importing libraries 
+
+```{r}
+library("tidyverse")
+library("dplyr")
+library("tidyr")
+library("zoo")
+```
+
+importing HDI and GDP files
+
+```{r}
+House_Price_Index <- read.csv("C:/Users/HP/Downloads/House_Price_Index.csv")
+GDP_Index <- read.csv("C:/Users/HP/Downloads/GDP-table-no.csv")
+
+```
+
+Scrunitized HPI and GDP files and make new data sets
+
+```{r}
+hpidata <- House_Price_Index[6:53,2:15]
+gdpdata <- GDP_Index[4:46,3:12] 
+```
+
+convert first row to be header
+
+```{r}
+colnames(hpidata) = hpidata[1, ] 
+colnames(gdpdata) = gdpdata[1, ]
+```
+
+Removing first row
+
+```{r}
+hpidata = hpidata[-1, ]
+gdpdata = gdpdata[-1, ]
+```
+
+Two datasets of HPI values and GDP values
+```{r}
+hpidata <- hpidata %>% 
+  select("Quarter","ALL INDIA")
+gdpdata <- gdpdata %>% 
+  select("Quarter","GDP at market prices")
+```
+
+Indexing reset to 1
+
+```{r}
+row.names(hpidata) <- NULL
+row.names(gdpdata) <- NULL
+```
+
+new data values starting from year 2011 in HPI to compare with GDP from year 2011
+
+```{r}
+hpidata <- hpidata[5:46, ]
+row.names(hpidata) <- NULL
+```
+
+converting the values of the variable ALL INDIA HPI and GDP at market prices characters to numeric values
+
+```{r}
+hpidata$`ALL INDIA` <- as.numeric(hpidata$`ALL INDIA`)
+class(hpidata$`ALL INDIA`)
+gdpdata$`GDP at market prices` <- as.numeric(gdpdata$`GDP at market prices`)
+class(gdpdata$`GDP at market prices`)
+```
+
+date format in Quarter and Year 
+
+```{r}
+hpidata$Quarter <- as.yearqtr(hpidata$Quarter, "Q%q.%Y")
+class(hpidata$Quarter)
+```
+
+new data frame of HPI and GDP in one file by having three columns Quarter, HPI and GDP values in one frame
+
+```{r}
+HPI_GDP <- data.frame(hpidata$Quarter,hpidata$`ALL INDIA`,gdpdata$`GDP at market prices`)
+colnames(HPI_GDP) <- c("Quarter","Housing Price Index","Gross Domastic Product")
+View(HPI_GDP)
+```
+
+Growth rate of gdp
+```{r}
+k <- gdpdata$`GDP at market prices`
+growth_rate <- function(x)(x/lag(x)-1)*100 
+HPI_GDP$`GDP at market prices` <- round(growth_rate(gdpdata$`GDP at market prices`),2) 
+```
+
+Make the data frame into time series data
+
+```{r}
+library(xts)
+class(HPI_GDP$Quarter)
+HPI_GDP <- xts(HPI_GDP[,-1], order.by = HPI_GDP$Quarter)
+HPI_GDP <- HPI_GDP[-1,]
+```
+
+
+Plotting GDP and House Price Index
+```{r}
+mydata <- merge(Housing Price Index,GDP at market prices) %>% fortify %>%
+  tidyr::gather(Variable, Value, -Index)
+
+ggplot(HPI_GDP$`Housing Price Index`) + geom_line(HPI_GDP$`GDP at market prices`,mapping = (aes(HPI_GDP$`Housing Price Index`, HPI_GDP$`GDP at market prices`))) 
+```
+
